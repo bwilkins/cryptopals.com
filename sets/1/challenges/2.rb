@@ -28,7 +28,7 @@ def xor_bytea_bytea(bytea1, bytea2)
 end
 
 def bytea_to_hexstr(bytea)
-  bytea.map{|b|"%2x"%b}.join
+  bytea.map{|b|"%02x"%b}.join
 end
 
 def challenge2(input1, input2)

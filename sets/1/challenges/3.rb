@@ -31,7 +31,7 @@ def xor_bytea_byte(bytea, byte)
 end
 
 def bytea_to_hexstr(bytea)
-  bytea.map{|b|"%2x"%b}.join
+  bytea.map{|b|"%02x"%b}.join
 end
 
 def rank_permutation(permutation)
