@@ -7,7 +7,7 @@ input = File.read(input_file)
 b64decoded = Base64.decode64(input)
 bytea = b64decoded.bytes
 
-RANKING = "ETAOIN SHRDLU"
+RANKING = "EOTHA 'SINRD LUYMW FGCBP KVJQXZ"
 
 def hamming_distance(s1, s2)
   if s1.size != s2.size
@@ -44,15 +44,15 @@ def bytea_to_str(bytea)
   bytea.map(&:chr).join
 end
 
-def find_most_likely_decoded_sequence(b1)
+def find_most_likely_byte(b1)
   permutations = (0..255).map do |byte|
     bytea_to_str(xor_bytea_byte(b1, byte)).upcase
   end
 
   ranked = permutations.each_with_index.inject({}) do |set, (perm, index)|
     set.tap do |s|
-    s[rank_permutation(perm)] = {byte: index,permutation: perm}
-    end
+    s[rank_permutation(perm)] = index
+  end
   end
 
   ranked[ranked.keys.max]
@@ -78,30 +78,49 @@ end
 keysize_options = (2..40).inject({}) do |memo, keysize|
   bytea1 = bytea[0, keysize]
   bytea2 = bytea[keysize, keysize]
+  bytea3 = bytea[keysize*2, keysize]
+  bytea4 = bytea[keysize*3, keysize]
+  bytea5 = bytea[keysize*4, keysize]
 
-  dist = hamming_distance(bytea1, bytea2)
-  norm = dist / keysize
+  dist1 = hamming_distance(bytea1, bytea2)
+  dist2 = hamming_distance(bytea2, bytea3)
+  dist3 = hamming_distance(bytea3, bytea4)
+  dist4 = hamming_distance(bytea4, bytea5)
+
+  dist = [dist1, dist2, dist3, dist4].min
+  norm = dist/keysize
 
   memo[norm] ||= Array.new
-  memo[norm] << keysize
+  memo[norm] << {keysize: keysize, distance: dist}
 
   memo
 end
 
-keysize_select = keysize_options.keys.min
-keysize = keysize_options[keysize_select].first
+keysize_norms = keysize_options.keys.sort
+perms = keysize_norms.take(3).flat_map do |norm|
+  keysize_options[norm].map do |keysize:, distance:|
 
-blocks_of_keysize = bytea.each_slice(keysize).to_a
-if (blocks_of_keysize.length % keysize) != 0
-  # Cut the length of to be fully divisible
+    blocks_of_keysize = bytea.each_slice(keysize).to_a
+  blocks_of_keysize.pop
+  columns = blocks_of_keysize.transpose
+
+  key_bytea = columns.map do |c|
+    find_most_likely_byte(c)
+  end
+
+  key = bytea_to_str(key_bytea)
+
+  xor_key = RepeatingXorKey.new(key)
+  {key: key, perm: bytea_to_str(xor_key.crypt(bytea))}
+  end
 end
-columns = blocks_of_keysize.transpose
 
-key_bytea = columns.map do |c|
-  find_most_likely_decoded_sequence(c)[:byte]
+ranked = perms.inject({}) do |set, perm|
+  set.tap do |s|
+    s[rank_permutation(perm[:perm])] = perm
+  end
 end
 
-key = bytea_to_str(key_bytea)
+puts "Key: #{ranked[ranked.keys.max][:key]}"
+puts ranked[ranked.keys.max][:perm]
 
-xor_key = RepeatingXorKey.new(key)
-puts xor_key.crypt(bytea)
