@@ -8,12 +8,16 @@ def hexstr_to_bytea(hex_str)
   end
 end
 
+def detect_ECB_mode(line_bytea)
+  slices = line_bytea.each_slice(16).to_a
+  slices.length != slices.uniq.length
+end
+
 file_lines = File.read(File.expand_path('../8.txt', __FILE__)).chomp.split
 
 file_lines.each_with_index do |line, index|
   data = hexstr_to_bytea(line)
-  slices = data.each_slice(16).to_a
-  if slices.length != slices.uniq.length
+  if detect_ECB_mode(data)
     puts index+1
   end
 end
