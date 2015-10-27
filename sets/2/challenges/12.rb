@@ -5,12 +5,12 @@ require 'openssl'
 $cipher_key = nil
 def encrypt(input_str)
   plain_text = input_str + Base64.decode64(
-  <<-SURPRISE
+    <<-SURPRISE
 Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
 aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
 dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg
 YnkK
-  SURPRISE
+    SURPRISE
   )
   cipher = OpenSSL::Cipher.new('AES-128-ECB')
   cipher.encrypt
@@ -65,58 +65,29 @@ puts "What is the secret length?: #{secret_length}"
 puts "What is the secret-only pad size?: #{secret_only_pad_size}"
 
 discovered_bytes = ""
-greater_dict = Hash.new
-block_size.times do |size|
-  pad_length = block_size - size - 1
-  padding = 'A'*pad_length
-  dictionary = (0x0..0xFF).inject({}) do |dict, byte|
-    input = padding + discovered_bytes + byte.chr
-    cipher_text = encrypt(input)[0,16]
-    greater_dict[cipher_text] = input
-    dict.merge(cipher_text => byte.chr)
-  end
-  encrypted = encrypt(padding)[0,16]
-  discovered_bytes << dictionary[encrypted]
-end
-
-
-
-discovered_tail = ""
-mandatory_pad = 'A'*(secret_only_pad_size)
-(block_size-1).times do |size|
-  dictionary = (0x0..0xFF).inject({}) do |dict, byte|
-    input = pad_block(byte.chr + discovered_tail, block_size)
-    encrypted = encrypt(input + 'A' * size + mandatory_pad)
-    head_cipher_text = encrypted[0, 16]
-    greater_dict[head_cipher_text] = input
-    dict.merge(head_cipher_text => byte.chr)
-  end
-
-  encrypted = bytea_to_str(encrypt('A'*(secret_only_pad_size+size+1)).bytes.last(16))
-  begin
-    discovered_tail = dictionary[encrypted] + discovered_tail
-  rescue
-    require 'pry'
-    binding.pry
-    nil
+while discovered_bytes.length < secret_length do
+  block_shift = discovered_bytes.length / block_size
+  block_shift_pad_length = block_shift * block_size
+  block_size.times do |size|
+    break if discovered_bytes.length >= secret_length
+    pad_length = block_shift_pad_length +block_size - discovered_bytes.length - 1
+    padding = 'A'*pad_length
+    dictionary = (0x0..0xFF).inject({}) do |dict, byte|
+      input = padding + discovered_bytes + byte.chr
+      cipher_text = encrypt(input)[block_shift_pad_length,block_size]
+      dict.merge(cipher_text => byte.chr)
+    end
+    encrypted = encrypt(padding)[block_shift_pad_length,block_size]
+    byte = dictionary[encrypted]
+    discovered_bytes << byte
   end
 end
 
-puts "Discovered at the head:"
+
+
+puts
+puts "Decrypted secret:"
 puts discovered_bytes
 puts
-puts "Discovered at the tail:"
-puts discovered_tail
-puts
-
-puts "Final:"
-encrypted = encrypt(discovered_bytes)
-bytea_to_hexstr(encrypted.bytes).chars.each_slice(32) do |slice|
-  puts slice.join
-end
-
-
-#require 'pry'
-#binding.pry
 
 exit
