@@ -1,35 +1,25 @@
 require 'base64'
 
 def pad_block(block, block_length)
-  if block.length >=block_length
-    return block
-  end
-
+  return block if block.length >=block_length
   length_to_pad = block_length - block.length
-  length_to_pad.times do
-    block << length_to_pad.chr
-  end
-
-  block
+  block + length_to_pad.chr*length_to_pad
 end
 
 def pad_block_bytea(block, block_length)
-  if block.length >=block_length
-    return block
-  end
-
+  return block if block.length >=block_length
   length_to_pad = block_length - block.length
-  length_to_pad.times do
-    block << length_to_pad
-  end
-
-  block
+  block + ([length_to_pad] * length_to_pad)
 end
 
 RAND_BYTES = (0x0..0xFF).to_a
 PAD_LEN = (5..10).to_a
 def random_pad
-  random_bytea(PAD_LEN.sample).map(&:chr).join
+  random_str(PAD_LEN.sample)
+end
+
+def random_str(len)
+  random_bytea(len).map(&:chr).join
 end
 
 def random_bytea(len)
