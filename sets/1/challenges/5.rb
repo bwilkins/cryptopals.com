@@ -1,41 +1,12 @@
 #!/usr/bin/env ruby
 
-require 'base64'
+require(File.expand_path('../../../../util.rb', __FILE__))
 
 INPUT="Burning 'em, if you ain't quick and nimble
 I go crazy when I hear a cymbal"
 XOR_KEY='ICE'
 
 EXPECTED_OUTPUT = '0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f'
-
-def hexstr_to_bytea(hex_str)
-  return [] if (hex_str.size % 2) != 0
-  hex_str.chars.each_slice(2).map do |high, low|
-    "#{high}#{low}".hex
-  end
-end
-
-def bytea_to_str(bytea)
-  bytea.map(&:chr).join
-end
-
-def xor_bytea_bytea(bytea1, bytea2)
-  return [] if bytea1.size != bytea2.size
-
-  Array.new.tap do |a|
-    bytea1.each_with_index do |byte, i|
-      a << (byte ^ bytea2[i])
-    end
-  end
-end
-
-def xor_bytea_byte(bytea, byte)
-  bytea.map { |b| b ^ byte }
-end
-
-def bytea_to_hexstr(bytea)
-  bytea.map{|b|"%02x"%b}.join
-end
 
 class RepeatingXorKey
   def initialize(key)

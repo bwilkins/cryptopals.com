@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'base64'
+require(File.expand_path('../../../../util.rb', __FILE__))
 
 input_file = File.expand_path('../6.txt', __FILE__)
 input = File.read(input_file)
@@ -9,39 +9,12 @@ bytea = b64decoded.bytes
 
 RANKING = "EOTHA 'SINRD LUYMW FGCBP KVJQXZ"
 
-def hamming_distance(s1, s2)
-  if s1.size != s2.size
-    puts "sizeof #{s1} != sizeof #{s2}"
-    return nil
-  end
-
-  s1.zip(s2).inject(0) do |sum, (c1, c2)|
-    val = c1 ^ c2
-    while (val != 0)
-      sum += 1
-      val &= val - 1
-    end
-    sum
-  end
-end
-
-def xor_bytea_byte(bytea, byte)
-  bytea.map { |b| b ^ byte }
-end
-
-def bytea_to_hexstr(bytea)
-  bytea.map{|b|"%02x"%b}.join
-end
 
 def rank_permutation(permutation)
   RANKING.chars.each_with_index.inject(0) do |sum, (char, index)|
     weight = RANKING.size - index
     sum += weight * permutation.count(char)
   end
-end
-
-def bytea_to_str(bytea)
-  bytea.map(&:chr).join
 end
 
 def find_most_likely_byte(b1)

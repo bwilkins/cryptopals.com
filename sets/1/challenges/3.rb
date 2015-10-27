@@ -1,38 +1,9 @@
 #!/usr/bin/env ruby
 
-require 'base64'
+require(File.expand_path('../../../../util.rb', __FILE__))
 
 INPUT = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 RANKING = "ETAOIN SHRDLU"
-
-def hexstr_to_bytea(hex_str)
-  return [] if (hex_str.size % 2) != 0
-  hex_str.chars.each_slice(2).map do |high, low|
-    "#{high}#{low}".hex
-  end
-end
-
-def bytea_to_str(bytea)
-  bytea.map(&:chr).join
-end
-
-def xor_bytea_bytea(bytea1, bytea2)
-  return [] if bytea1.size != bytea2.size
-
-  Array.new.tap do |a|
-    bytea1.each_with_index do |byte, i|
-      a << (byte ^ bytea2[i])
-    end
-  end
-end
-
-def xor_bytea_byte(bytea, byte)
-  bytea.map { |b| b ^ byte }
-end
-
-def bytea_to_hexstr(bytea)
-  bytea.map{|b|"%02x"%b}.join
-end
 
 def rank_permutation(permutation)
   RANKING.chars.each_with_index.inject(0) do |sum, (char, index)|

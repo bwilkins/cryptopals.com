@@ -1,37 +1,9 @@
 #!/usr/bin/env ruby
 
-require 'base64'
+require(File.expand_path('../../../../util.rb', __FILE__))
 require 'openssl'
 
 KEY="YELLOW SUBMARINE"
-
-def pad_block_bytea(block, block_length)
-  if block.length >=block_length
-    return block
-  end
-
-  length_to_pad = block_length - block.length
-  length_to_pad.times do
-    block << length_to_pad
-  end
-
-  block
-end
-
-
-def xor_bytea_bytea(bytea1, bytea2)
-  return [] if bytea1.size != bytea2.size
-
-  Array.new.tap do |a|
-    bytea1.each_with_index do |byte, i|
-      a << (byte ^ bytea2[i])
-    end
-  end
-end
-
-def bytea_to_str(bytea)
-  bytea.map(&:chr).join
-end
 
 def ECB_encrypt(input, key)
   cipher = OpenSSL::Cipher.new('AES-128-ECB')
