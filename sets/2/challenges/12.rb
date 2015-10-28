@@ -26,32 +26,8 @@ YnkK
   end
 end
 
-def discover_ECB_mode(&block)
-  discovery_block = 'A'*1024
-  encrypted = block.call(discovery_block)
-  detect_ECB_mode(encrypted.bytes)
-end
 
-def discover_block_size(&block)
-  i = 0
-  encrypted = ''
-  until detect_ECB_mode(encrypted.bytes)
-    i+=1
-    encrypted = block.call('A'*(i*2))
-  end
-  i
-end
 
-def discover_secret_length(&block)
-  i=0
-  base_length = block.call('').length
-  test_length = block.call('A'*i).length
-  while test_length == base_length
-    i+=1
-    test_length = block.call('A'*i).length
-  end
-  base_length - (i-1)
-end
 
 ecb = discover_ECB_mode {|input| encrypt(input)}
 block_size = discover_block_size {|input| encrypt(input)}
@@ -64,30 +40,35 @@ puts "What is the block size?: #{block_size}"
 puts "What is the secret length?: #{secret_length}"
 puts "What is the secret-only pad size?: #{secret_only_pad_size}"
 
-discovered_bytes = ""
-while discovered_bytes.length < secret_length do
-  block_shift = discovered_bytes.length / block_size
-  block_shift_pad_length = block_shift * block_size
-  block_size.times do |size|
-    break if discovered_bytes.length >= secret_length
-    pad_length = block_shift_pad_length +block_size - discovered_bytes.length - 1
-    padding = 'A'*pad_length
-    dictionary = (0x0..0xFF).inject({}) do |dict, byte|
-      input = padding + discovered_bytes + byte.chr
-      cipher_text = encrypt(input)[block_shift_pad_length,block_size]
-      dict.merge(cipher_text => byte.chr)
+def padding_oracle_attack(&block)
+  discovered_bytes = ""
+  secret_length = discover_secret_length(&block)
+  block_size = discover_block_size(&block)
+  while discovered_bytes.length < secret_length do
+    block_shift = discovered_bytes.length / block_size
+    block_shift_pad_length = block_shift * block_size
+    block_size.times do |size|
+      break if discovered_bytes.length >= secret_length
+      pad_length = block_shift_pad_length +block_size - discovered_bytes.length - 1
+      padding = 'A'*pad_length
+      dictionary = (0x0..0xFF).inject({}) do |dict, byte|
+        input = padding + discovered_bytes + byte.chr
+        cipher_text = block.call(input)[block_shift_pad_length,block_size]
+        dict.merge(cipher_text => byte.chr)
+      end
+      encrypted = block.call(padding)[block_shift_pad_length,block_size]
+      byte = dictionary[encrypted]
+      discovered_bytes << byte
     end
-    encrypted = encrypt(padding)[block_shift_pad_length,block_size]
-    byte = dictionary[encrypted]
-    discovered_bytes << byte
   end
+  return discovered_bytes
 end
 
 
 
 puts
 puts "Decrypted secret:"
-puts discovered_bytes
+puts padding_oracle_attack {|input| encrypt(input)}
 puts
 
 exit

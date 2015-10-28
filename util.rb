@@ -90,3 +90,31 @@ def detect_AES_mode(line_bytea)
   slices = line_bytea.each_slice(16).to_a
   slices.length != slices.uniq.length ? :ECB : :CBC
 end
+
+def discover_ECB_mode(&block)
+  discovery_block = 'A'*1024
+  encrypted = block.call(discovery_block)
+  detect_ECB_mode(encrypted.bytes)
+end
+
+def discover_block_size(&block)
+  i = 0
+  encrypted = ''
+  until detect_ECB_mode(encrypted.bytes)
+    i+=1
+    encrypted = block.call('A'*(i*2))
+  end
+  i
+end
+
+def discover_secret_length(&block)
+  i=0
+  base_length = block.call('').length
+  test_length = block.call('A'*i).length
+  while test_length == base_length
+    i+=1
+    test_length = block.call('A'*i).length
+  end
+  base_length - (i-1)
+end
+
