@@ -12,24 +12,26 @@ def ECB_encrypt_rand_key(input_str)
 end
 
 def ECB_encrypt(input)
+  input = ByteArray.from_string(input)
   output = ""
 
-  input.bytes.each_slice(16).map do |byte_slice|
-    byte_slice0 = pad_block_bytea(byte_slice, 16)
-    output << ECB_encrypt_rand_key(bytea_to_str(byte_slice0))
+  input.each_slice(16).map do |byte_slice|
+    byte_slice0 = byte_slice.pad(16)
+    output << ECB_encrypt_rand_key(byte_slice0.to_s)
   end
   output
 end
 
 def CBC_encrypt(input)
-  _iv = random_bytea(16)
+  input = ByteArray.from_string(input)
+  _iv = ByteArray.new(random_bytea(16))
   output = ""
 
-  input.bytes.each_slice(16).map do |byte_slice|
-    byte_slice0 = pad_block_bytea(byte_slice, 16)
-    byte_slice1 = xor_bytea_bytea(byte_slice0, _iv)
-    output << (_iv = ECB_encrypt_rand_key(bytea_to_str(byte_slice1)))
-    _iv = _iv.bytes
+  input.each_slice(16).map do |byte_slice|
+    byte_slice0 = byte_slice.pad(16)
+    byte_slice1 = byte_slice0.xor(_iv)
+    output << (_iv = ECB_encrypt_rand_key(byte_slice1.to_s))
+    _iv = ByteArray.from_string(_iv)
   end
   output
 end

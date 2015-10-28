@@ -10,6 +10,7 @@ class ByteArray
   def initialize(input=[])
     @bytes = input # Assumed to be an array of bytes already
   end
+
   def_delegators :@bytes, :[], :[]=, :<<, :length, :size
 
   def self.from_string(s)
@@ -28,9 +29,8 @@ class ByteArray
     @bytes.map(&:chr).join
   end
 
-
   def each_slice(count)
-    @bytes.each_slice.map do |slice|
+    @bytes.each_slice(count).map do |slice|
       self.class.new(slice)
     end
   end
@@ -49,18 +49,27 @@ class ByteArray
 
   def xor(against)
     if against.is_a?(self.class)
-      #
+      xor_bytea(against)
+    elsif against.is_a?(String)
+      xor_bytea(ByteArray.from_string(against))
+    else
+      xor_byte(against)
     end
   end
 
   private
 
   def xor_bytea(against)
-    return ByteArray.new if self.size != against.size
+    if self.size != against.size
+      if against.size == 1
+        return xor_byte(against[0])
+      end
+      return ByteArray.new
+    end
 
     self.class.new.tap do |a|
       @bytes.each_with_index do |byte, i|
-        a << (byte ^ bytea2[i])
+        a << (byte ^ against[i])
       end
     end
   end

@@ -26,12 +26,14 @@ def ECB_decrypt(input, key)
 end
 
 def CBC_decrypt(input, key, iv)
-  _iv = iv.dup.bytes
+  _iv = ByteArray.from_string(iv)
+  input = ByteArray.from_string(input)
   output = ""
 
-  input.bytes.each_slice(16).map do |byte_slice|
-    x = ECB_decrypt(bytea_to_str(byte_slice), key)
-    output << bytea_to_str(xor_bytea_bytea(x.bytes, _iv))
+  input.each_slice(16).map do |byte_slice|
+    x = ECB_decrypt(byte_slice.to_s, key)
+    intermediate = ByteArray.from_string(x)
+    output << intermediate.xor(_iv).to_s
     _iv = byte_slice
   end
 
@@ -39,13 +41,14 @@ def CBC_decrypt(input, key, iv)
 end
 
 def CBC_encrypt(input, key, iv)
-  _iv = iv.dup
+  _iv = ByteArray.from_string(iv)
+  input = ByteArray.from_string(input)
   output = ""
 
-  input.bytes.each_slice(16).map do |byte_slice|
-    byte_slice = pad_block_bytea(byte_slice, 16)
-    byte_slice = xor_bytea_bytea(byte_slice, _iv.bytes)
-    output << _iv = ECB_encrypt(bytea_to_str(byte_slice), key)
+  input.each_slice(16).map do |byte_slice|
+    byte_slice.pad!(16)
+    byte_slice = byte_slice.xor(_iv)
+    output << _iv = ECB_encrypt(byte_slice.to_s, key)
   end
   output
 end
