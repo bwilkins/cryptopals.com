@@ -46,39 +46,40 @@ class ByteArray
     @bytes += ([size_diff] * size_diff) if size_diff > 0
   end
 
+  def xor!(against)
+    if against.is_a?(self.class)
+      xor_bytea!(against)
+    elsif against.is_a?(String)
+      xor_bytea!(ByteArray.from_string(against))
+    else
+      xor_byte!(against)
+    end
+  end
 
   def xor(against)
-    if against.is_a?(self.class)
-      xor_bytea(against)
-    elsif against.is_a?(String)
-      xor_bytea(ByteArray.from_string(against))
-    else
-      xor_byte(against)
+    dup.tap do |dup|
+      dup.xor!(against)
     end
   end
 
   private
 
-  def xor_bytea(against)
+  def xor_bytea!(against)
     if self.size != against.size
       if against.size == 1
-        return xor_byte(against[0])
+        xor_byte(against[0])
       end
-      return ByteArray.new
+      return nil
     end
 
-    self.class.new.tap do |a|
-      @bytes.each_with_index do |byte, i|
-        a << (byte ^ against[i])
-      end
+    @bytes.each_with_index do |byte, i|
+      self[i] = (byte ^ against[i])
     end
   end
 
-  def xor_byte(against)
-    self.class.new.tap do |a|
-      @bytes.each do |byte|
-        a << (byte ^ against)
-      end
+  def xor_byte!(against)
+    @bytes.each_with_index do |byte, i|
+      self[i] = (byte ^ against)
     end
   end
 end

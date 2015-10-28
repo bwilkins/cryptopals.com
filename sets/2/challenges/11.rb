@@ -16,8 +16,8 @@ def ECB_encrypt(input)
   output = ""
 
   input.each_slice(16).map do |byte_slice|
-    byte_slice0 = byte_slice.pad(16)
-    output << ECB_encrypt_rand_key(byte_slice0.to_s)
+    byte_slice.pad!(16)
+    output << ECB_encrypt_rand_key(byte_slice.to_s)
   end
   output
 end
@@ -28,9 +28,9 @@ def CBC_encrypt(input)
   output = ""
 
   input.each_slice(16).map do |byte_slice|
-    byte_slice0 = byte_slice.pad(16)
-    byte_slice1 = byte_slice0.xor(_iv)
-    output << (_iv = ECB_encrypt_rand_key(byte_slice1.to_s))
+    byte_slice.pad!(16)
+    byte_slice.xor!(_iv)
+    output << (_iv = ECB_encrypt_rand_key(byte_slice.to_s))
     _iv = ByteArray.from_string(_iv)
   end
   output
