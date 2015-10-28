@@ -1,4 +1,78 @@
 require 'base64'
+require 'forwardable'
+
+RAND_BYTES = (0x0..0xFF).to_a
+PAD_LEN = (5..10).to_a
+
+class ByteArray
+  extend Forwardable
+
+  def initialize(input=[])
+    @bytes = input # Assumed to be an array of bytes already
+  end
+  def_delegators :@bytes, :[], :[]=, :<<, :length, :size
+
+  def self.from_string(s)
+    new(s.bytes)
+  end
+
+  def dup
+    self.class.new(@bytes.dup)
+  end
+
+  def to_s
+    @bytes.map(&:chr).join
+  end
+
+  def to_str
+    @bytes.map(&:chr).join
+  end
+
+
+  def each_slice(count)
+    @bytes.each_slice.map do |slice|
+      self.class.new(slice)
+    end
+  end
+
+  def pad(pad_size)
+    dup.tap do |dup|
+      dup.pad!(pad_size)
+    end
+  end
+
+  def pad!(pad_size)
+    size_diff = pad_size - length
+    @bytes += ([size_diff] * size_diff) if size_diff > 0
+  end
+
+
+  def xor(against)
+    if against.is_a?(self.class)
+      #
+    end
+  end
+
+  private
+
+  def xor_bytea(against)
+    return ByteArray.new if self.size != against.size
+
+    self.class.new.tap do |a|
+      @bytes.each_with_index do |byte, i|
+        a << (byte ^ bytea2[i])
+      end
+    end
+  end
+
+  def xor_byte(against)
+    self.class.new.tap do |a|
+      @bytes.each do |byte|
+        a << (byte ^ against)
+      end
+    end
+  end
+end
 
 def pad_block(block, block_length)
   return block if block.length >=block_length
@@ -12,8 +86,6 @@ def pad_block_bytea(block, block_length)
   block + ([length_to_pad] * length_to_pad)
 end
 
-RAND_BYTES = (0x0..0xFF).to_a
-PAD_LEN = (5..10).to_a
 def random_pad
   random_str(PAD_LEN.sample)
 end
