@@ -7,8 +7,7 @@ EXPECTED_OUTPUT = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb
 
 def hex_to_base64(hex_str)
   bytea = hexstr_to_bytea(hex_str)
-  s = bytea_to_str(bytea)
-  Base64.encode64(s).gsub(/\W/,'')
+  Base64.encode64(bytea.to_s).gsub(/\W/,'')
 end
 
 puts "Input: #{INPUT}"

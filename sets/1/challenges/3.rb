@@ -15,7 +15,7 @@ end
 def find_most_likely_decoded_sequence(input1)
   b1 = hexstr_to_bytea(input1)
   permutations = (0..255).map do |byte|
-    bytea_to_str(xor_bytea_byte(b1, byte)).upcase
+    b1.xor(byte).to_s.upcase
   end
 
   ranked = permutations.each_with_index.inject({}) do |set, (perm, index)|

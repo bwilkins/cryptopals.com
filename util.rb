@@ -129,20 +129,9 @@ def xor_bytea_bytea(bytea1, bytea2)
   end
 end
 
-def str_to_bytea(str)
-  str.bytes
-end
-
-def bytea_to_str(bytea)
-  bytea.map(&:chr).join
-end
-
-
 def hexstr_to_bytea(hex_str)
-  return [] if (hex_str.size % 2) != 0
-  hex_str.chars.each_slice(2).map do |high, low|
-    "#{high}#{low}".hex
-  end
+  return ByteArray.new if (hex_str.size % 2) != 0
+  ByteArray.from_string([hex_str].pack('H*'))
 end
 
 def bytea_to_hexstr(bytea)
