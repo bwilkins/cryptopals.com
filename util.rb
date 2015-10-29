@@ -6,12 +6,13 @@ PAD_LEN = (5..10).to_a
 
 class ByteArray
   extend Forwardable
+  include Comparable
 
   def initialize(input=[])
     @bytes = input # Assumed to be an array of bytes already
   end
 
-  def_delegators :@bytes, :[], :[]=, :<<, :length, :size
+  def_delegators :@bytes, :[], :[]=, :<<, :<=>, :length, :size
 
   def self.from_string(s)
     new(s.bytes)
@@ -32,6 +33,8 @@ class ByteArray
   def each_slice(count)
     @bytes.each_slice(count).map do |slice|
       self.class.new(slice)
+    end.each do |slice|
+      yield slice if block_given?
     end
   end
 
@@ -176,7 +179,7 @@ end
 def discover_ECB_mode(&block)
   discovery_block = 'A'*1024
   encrypted = block.call(discovery_block)
-  detect_ECB_mode(encrypted.bytes)
+  detect_ECB_mode(ByteArray.from_string(encrypted))
 end
 
 def discover_block_size(&block)

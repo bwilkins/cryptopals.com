@@ -2,38 +2,32 @@ require(File.expand_path('../../../../util.rb', __FILE__))
 require 'openssl'
 
 
-$cipher_key = nil
 def encrypt(input_str)
-  plain_text = input_str + Base64.decode64(
+  plain_text = ByteArray.from_string(input_str + Base64.decode64(
     <<-SURPRISE
 Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
 aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
 dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg
 YnkK
     SURPRISE
-  )
+  ))
   cipher = OpenSSL::Cipher.new('AES-128-ECB')
   cipher.encrypt
   cipher.padding = 0
   cipher.key = $cipher_key ||= random_str(16)
   String.new.tap do |cipher_text|
-    plain_text.bytes.each_slice(16) do |slice|
-      padded = pad_block_bytea(slice,16)
-      padded_str = bytea_to_str(padded)
-      cipher_text << cipher.update(padded_str)
+    plain_text.each_slice(16) do |slice|
+      cipher_text << cipher.update(slice.pad(16).to_s)
     end
     cipher_text << cipher.final
   end
 end
 
-
-
-
 ecb = discover_ECB_mode {|input| encrypt(input)}
 block_size = discover_block_size {|input| encrypt(input)}
 secret_length = discover_secret_length{|input| encrypt(input)}
-secret_remainder = secret_length % 16
-secret_only_pad_size = 16 - secret_remainder
+secret_remainder = secret_length % block_size
+secret_only_pad_size = block_size - secret_remainder
 
 puts "In ECB mode?: #{ecb}"
 puts "What is the block size?: #{block_size}"
