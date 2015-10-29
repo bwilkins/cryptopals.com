@@ -12,7 +12,7 @@ class ByteArray
     @bytes = input # Assumed to be an array of bytes already
   end
 
-  def_delegators :@bytes, :[], :[]=, :<<, :<=>, :length, :size
+  def_delegators :@bytes, :[], :[]=, :<<, :length, :size
 
   def self.from_string(s)
     new(s.bytes)
@@ -28,6 +28,10 @@ class ByteArray
 
   def to_str
     @bytes.map(&:chr).join
+  end
+
+  def <=>(other)
+    other <=> @bytes
   end
 
   def each_slice(count)
@@ -156,13 +160,13 @@ end
 
 def detect_ECB_mode(line_bytea)
   slices = line_bytea.each_slice(16).to_a
-  slices.length != slices.uniq.length
+  slices.length != slices.uniq{|s|s[0,s.length]}.length
 end
 
 
 def detect_AES_mode(line_bytea)
   slices = line_bytea.each_slice(16).to_a
-  slices.length != slices.uniq.length ? :ECB : :CBC
+  slices.length != slices.uniq{|s|s[0,s.length]}.length ? :ECB : :CBC
 end
 
 def discover_ECB_mode(&block)
