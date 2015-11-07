@@ -37,10 +37,25 @@ def encrypted_profile_for(email)
 end
 
 def decrypt_profile_from(blob)
-  profile_from(decrypt(blob))
+  profile_from(decrypt(blob)).to_h
 end
 
-require 'pry'
-binding.pry
+secret_length = discover_secret_length do |input|
+  encrypted_profile_for(input)
+end
+pad_block = encrypted_profile_for('x'*(secret_length + 1))[-16, 16]
 
-exit
+admin_start_block = encrypted_profile_for('xxxxxxxxxx' + 'admin')[16,16]
+role_eq_block = encrypted_profile_for('foo@exa.com')[16,16]
+email_set_block = encrypted_profile_for('foo@exa.com')[0,16]
+
+
+hax_block = email_set_block + role_eq_block + admin_start_block + pad_block
+
+profile = decrypt_profile_from(hax_block)
+
+puts "Profile role is admin?: #{profile["role"] == "admin"}"
+
+#require 'pry'
+#binding.pry
+#exit
