@@ -256,3 +256,7 @@ def has_valid_padding?(str)
   count = ba.last
   VALID[-count, count] == count.chr * count
 end
+
+def check_padding!(str)
+  raise ArgumentError unless has_valid_padding?(str)
+end
