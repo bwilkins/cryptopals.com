@@ -57,6 +57,11 @@ class ByteArray
     @bytes += ([size_diff] * size_diff) if size_diff > 0
   end
 
+  def has_valid_padding?
+    last > length ||
+    VALID[-last, last] == last.chr * last
+  end
+
   def xor!(against)
     if against.is_a?(self.class)
       xor_bytea!(against)
@@ -252,9 +257,7 @@ def discover_first_block_controlled_byte_count(&block)
 end
 
 def has_valid_padding?(str)
-  ba = ByteArray.from_string(str)
-  count = ba.last
-  VALID[-count, count] == count.chr * count
+  ByteArray.from_string(str).has_valid_padding?
 end
 
 def check_padding!(str)
