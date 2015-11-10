@@ -12,7 +12,7 @@ class ByteArray
     @bytes = input # Assumed to be an array of bytes already
   end
 
-  def_delegators :@bytes, :[], :[]=, :<<, :length, :size
+  def_delegators :@bytes, :last, :[], :[]=, :<<, :length, :size
 
   def <=>(other)
     other <=> @bytes
@@ -249,4 +249,10 @@ def discover_first_block_controlled_byte_count(&block)
   end
 
   byte_count - 1
+end
+
+def has_valid_padding?(str)
+  ba = ByteArray.from_string(str)
+  count = ba.last
+  VALID[-count, count] == count.chr * count
 end
