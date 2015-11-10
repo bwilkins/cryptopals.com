@@ -14,6 +14,10 @@ class ByteArray
 
   def_delegators :@bytes, :[], :[]=, :<<, :length, :size
 
+  def <=>(other)
+    other <=> @bytes
+  end
+
   def self.from_string(s)
     new(s.bytes)
   end
@@ -176,16 +180,20 @@ def discover_ECB_mode(&block)
 end
 
 def discover_block_size(&block)
-  i = 0
-  encrypted = ''
-  until detect_ECB_mode(encrypted.bytes)
-    i+=1
-    encrypted = block.call('A'*(i*2))
+  test_block_1 = block.call('A').bytes
+  test_block_2 = block.call('B').bytes
+  while test_block_1.first == test_block_2.first
+    test_block_1.shift
+    test_block_2.shift
   end
-  i
+  while test_block_1.last == test_block_2.last
+    test_block_1.pop
+    test_block_2.pop
+  end
+  test_block_1.length
 end
 
-def discover_secret_length(&block)
+def discover_PKCS7_pad_length(&block)
   i=0
   base_length = block.call('').length
   test_length = block.call('A'*i).length
@@ -193,6 +201,52 @@ def discover_secret_length(&block)
     i+=1
     test_length = block.call('A'*i).length
   end
-  base_length - (i-1)
+  i-1
 end
 
+def discover_prefix_length(&block)
+  uncontrolled_blocks = discover_first_controlled_block(&block)
+  block_size = discover_block_size(&block)
+  bytes_controlled = discover_first_block_controlled_byte_count(&block)
+  bytes_not_controlled = block_size - bytes_controlled
+  bytes_not_controlled + uncontrolled_blocks * block_size
+end
+
+def discover_secret_length(&block)
+  bytes_not_controlled = discover_prefix_length(&block)
+  base_length = block.call('').length
+  base_length - bytes_not_controlled - discover_PKCS7_pad_length(&block)
+end
+
+def discover_first_controlled_block(&block)
+  blocks = 0
+  block_size = discover_block_size(&block)
+  found = false
+  base = block.call('')
+  test = block.call('A')
+  first = ByteArray.from_string(base).each_slice(block_size)
+  second = ByteArray.from_string(test).each_slice(block_size)
+  while not found
+    first.shift == second.shift ? blocks += 1 : found = true
+  end
+  blocks
+end
+
+# Knowing the first block we control, we also need to know
+# how many bytes we don't have control of (or how many bytes we do) in that first block
+def discover_first_block_controlled_byte_count(&block)
+  byte_count = 1
+  found = false
+
+  blocks = discover_first_controlled_block(&block)
+  block_size = discover_block_size(&block)
+  last_block = ByteArray.from_string(block.call('A'*0)).each_slice(block_size)[blocks]
+
+  while not found
+    check_block = ByteArray.from_string(block.call('A'*byte_count)).each_slice(block_size)[blocks]
+    check_block != last_block ? byte_count += 1 : found = true
+    last_block = check_block
+  end
+
+  byte_count - 1
+end
