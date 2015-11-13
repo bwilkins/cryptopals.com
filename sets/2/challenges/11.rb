@@ -2,16 +2,7 @@ require(File.expand_path('../../../../util.rb', __FILE__))
 require 'openssl'
 
 $cipher_key = nil
-def ECB_encrypt_rand_key(input_str)
-  cipher = OpenSSL::Cipher.new('AES-128-ECB')
-  cipher.encrypt
-  cipher.padding = 0
-  $cipher_key ||= cipher.random_key
-  cipher.key = $cipher_key
-  cipher.update(input_str) + cipher.final
-end
-
-def ECB_encrypt(input)
+def ECB_encrypt_all(input)
   input = ByteArray.from_string(input)
   output = ""
 
@@ -41,7 +32,7 @@ def encrypt(input_str)
   case [:ecb, :cbc].sample
   when :ecb
     puts "It should be ECB!"
-    ECB_encrypt(plain_text)
+    ECB_encrypt_all(plain_text)
   else
     puts "It should be CBC!"
     CBC_encrypt(plain_text)

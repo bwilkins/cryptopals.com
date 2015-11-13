@@ -1,5 +1,6 @@
 require 'base64'
 require 'forwardable'
+require 'openssl'
 
 RAND_BYTES = (0x0..0xFF).to_a
 PAD_LEN = (5..10).to_a
@@ -262,4 +263,67 @@ end
 
 def check_padding!(str)
   raise ArgumentError unless has_valid_padding?(str)
+end
+
+def ECB_encrypt(input_str, key)
+  cipher = OpenSSL::Cipher.new('AES-128-ECB')
+  cipher.encrypt
+  cipher.padding = 0
+  cipher.key = key
+  cipher.update(input_str) + cipher.final
+end
+
+def ECB_decrypt(input_str, key)
+  cipher = OpenSSL::Cipher.new('AES-128-ECB')
+  cipher.decrypt
+  cipher.padding = 0
+  cipher.key = key
+  cipher.update(input_str) + cipher.final
+end
+
+def ECB_encrypt_rand_key(input_str)
+  $cipher_key ||= random_str(16)
+  ECB_encrypt(input_str, $cipher_key)
+end
+
+def ECB_decrypt_rand_key(input_str)
+  $cipher_key ||= random_str(16)
+  ECB_decrypt(input_str)
+end
+
+def CBC_encrypt(input, key, iv)
+  input = ByteArray.from_string(input)
+  _iv = iv
+  output = ""
+
+  input.each_slice(16).map do |byte_slice|
+    byte_slice.pad!(16)
+    byte_slice.xor!(_iv)
+    output << (_iv = ECB_encrypt(byte_slice.to_s, key))
+    _iv = ByteArray.from_string(_iv)
+  end
+  output
+end
+
+def CBC_decrypt(input, key, iv)
+  input = ByteArray.from_string(input)
+  _iv = iv
+  output = ""
+
+  input.each_slice(16).map do |byte_slice|
+    byte_slice0 = ByteArray.from_string(ECB_decrypt(byte_slice.to_s, key))
+    output << byte_slice0.xor(_iv).to_s
+    _iv = byte_slice
+  end
+  output
+end
+
+def CBC_encrypt_rand_key(input, iv)
+  $cipher_key ||= random_str(16)
+  CBC_encrypt(input, $cipher_key, iv)
+end
+
+def CBC_decrypt_rand_key(input, iv)
+  $cipher_key ||= random_str(16)
+  CBC_decrypt(input, $cipher_key, iv)
 end
