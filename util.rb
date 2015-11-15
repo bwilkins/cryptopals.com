@@ -60,7 +60,7 @@ class ByteArray
 
   def has_valid_padding?
     last > length ||
-    VALID[-last, last] == last.chr * last
+    @bytes[-last, last] == last.chr * last
   end
 
   def xor!(against)
