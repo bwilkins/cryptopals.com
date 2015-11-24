@@ -23,6 +23,10 @@ class ByteArray
     new(s.bytes)
   end
 
+  def self.blank(size=16)
+    new([0]*size)
+  end
+
   def dup
     self.class.new(@bytes.dup)
   end
@@ -59,8 +63,8 @@ class ByteArray
   end
 
   def has_valid_padding?
-    last > length ||
-    @bytes[-last, last] == last.chr * last
+    last != 0 &&
+    @bytes[-last, last] == [last] * last
   end
 
   def xor!(against)
@@ -74,8 +78,8 @@ class ByteArray
   end
 
   def xor(against)
-    dup.tap do |dup|
-      dup.xor!(against)
+    self.dup.tap do |d|
+      d.xor!(against)
     end
   end
 
