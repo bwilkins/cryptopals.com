@@ -331,3 +331,17 @@ def CBC_decrypt_rand_key(input, iv)
   $cipher_key ||= random_str(16)
   CBC_decrypt(input, $cipher_key, iv)
 end
+
+def CTR_crypt(input, key, nonce)
+  String.new.tap do |plain_text|
+    slice_count = 0
+    ByteArray.from_string(input).each_slice(16) do |slice|
+      plain_text << slice.xor(CTR_keystream(key, nonce, slice_count*16)[0, slice.length]).to_s
+      slice_count += 1
+    end
+  end
+end
+
+def CTR_keystream(key, nonce, byte_count)
+  ECB_encrypt([nonce, byte_count/16].pack('q<q<'), key)
+end
