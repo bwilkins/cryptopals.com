@@ -19,8 +19,8 @@ def find_most_likely_decoded_sequence(input1)
 
   ranked = permutations.each_with_index.inject({}) do |set, (perm, index)|
     set.tap do |s|
-    s[rank_permutation(perm)] = {byte: index, permutation: perm}
-  end
+      s[rank_permutation(perm)] = {byte: index, permutation: perm}
+    end
   end
 
   [ranked.keys.max, ranked[ranked.keys.max]]
