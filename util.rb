@@ -83,6 +83,42 @@ class ByteArray
     end
   end
 
+  def not
+    self.dup.tap(&:not!)
+  end
+
+  def not!
+    @bytes.map!(&:~)
+  end
+
+  def and(other)
+    self.dup.tap do |b|
+      b.and!(other)
+    end
+  end
+
+  def and!(other)
+    if size != other.size
+      if other.size == 1
+        @bytes.each_with_index do |byte, i|
+          self[i] = byte & other[0]
+        end
+      end
+      return nil
+    end
+    @bytes.each_with_index do |byte, i|
+      self[i] = byte & other[i]
+    end
+  end
+
+  def neg
+    self.dup.tap(&:neg!)
+  end
+
+  def neg!
+    @bytes.map!{|byte| -byte}
+  end
+
   private
 
   def xor_bytea!(against)
