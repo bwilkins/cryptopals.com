@@ -23,6 +23,10 @@ class ByteArray
     new(s.bytes)
   end
 
+  def self.from_hexstr(s)
+    from_string([s].pack('H*'))
+  end
+
   def self.blank(size=16)
     new([0]*size)
   end
@@ -39,8 +43,8 @@ class ByteArray
     @bytes.map(&:chr).join
   end
 
-  def <=>(other)
-    other <=> @bytes
+  def to_hexstr
+    @bytes.map{|b|"%02x"%b}.join
   end
 
   def each_slice(count)
@@ -124,7 +128,7 @@ class ByteArray
   def xor_bytea!(against)
     if self.size != against.size
       if against.size == 1
-        xor_byte(against[0])
+        xor_byte!(against[0])
       end
       return nil
     end
